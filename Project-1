@@ -1,0 +1,120 @@
+
+This is a real time dataset of the ineuron technical consultant team.
+Download Dataset 1 - https://drive.google.com/file/d/1WrG-9qv6atP-W3P_-gYln1hHyFKRKMHP/view
+Download Dataset 2 - https://drive.google.com/file/d/1-JIPCZ34dyN6k9CqJa-Y8yxIGq6vTVXU/view
+Note: both files are csv files. 
+
+We are going to perform below activities:
+
+1. Create a schema based on the given dataset
+
+  We need to create two table as per our datasets - AgentLogingReport and AgentPerformance
+
+- AgentLogingReport
+
+    We have to perform our data analysis in ORC to table to increase the performace, 
+    so that we need to create two table as we can't directly load csv file to ORC table.
+
+    Input file columns : SL No,Agent,Date,Login Time,Logout Time,Duration
+
+    - Intermediate table to store csv file data
+
+    create table tb_agent_loging_report_txt (
+      sl_no int, agent string, log_date string, 
+      log_in timestamp, log_out timestamp, 
+      duration timestamp
+    ) row format delimited fields terminated by ',' tblproperties("skip.header.line.count" = "1") STORED AS TEXTFILE;
+    
+    
+    - Target table in ORC format
+    
+    create table tb_agent_loging_report (
+      sl_no int, agent string, log_date string, 
+      log_in timestamp, log_out timestamp, 
+      duration timestamp
+    ) row format delimited fields terminated by ',' tblproperties("skip.header.line.count" = "1") STORED AS ORC;
+    
+- AgentPerformance
+
+    We have to perform our data analysis in ORC to table to increase the performace, 
+    so that we need to create two table as we can't directly load csv file to ORC table.
+
+    Input file columns : SL No,Date,Agent Name,Total Chats,Average Response Time,Average Resolution Time,Average Rating,Total Feedback
+
+    - Intermediate table to store csv file data
+
+    create table tb_agent_performance_txt (
+      sl_no int, agent string, total_chats int, 
+      avg_resp_time timestamp, avg_resl_time timestamp,
+      avg_rating int, total_feedback int
+    ) row format delimited fields terminated by ',' tblproperties("skip.header.line.count" = "1") STORED AS TEXTFILE;
+    
+    
+    - Target table in ORC format
+    
+    create table tb_agent_performance (
+      sl_no int, agent string, total_chats int, 
+      avg_resp_time timestamp, avg_resl_time timestamp,
+      avg_rating int, total_feedback int
+    ) row format delimited fields terminated by ',' tblproperties("skip.header.line.count" = "1") STORED AS ORC;
+    
+    
+2. Dump the data inside the hdfs in the given schema location.
+
+    - Load data from Local to HDFS
+    
+    hdfs dfs -copyFromLocal '/config/workplace/AgentLogingReport.csv' '/tmp/hive/'
+    hdfs dfs -copyFromLocal '/config/workplace/AgentPerformance.csv' '/tmp/hive/'
+    
+    - Load data from HDFS to TEXT file format table
+    
+    load data inpath '/tmp/hive/AgentLogingReport.csv' into table tb_agent_loging_report_txt
+    load data inpath '/tmp/hive/AgentPerformance.csv' into table tb_agent_performance_txt
+    
+    - Load data from intermediate table to target table
+    
+    INSERT OVERWRITE table tb_agent_loging_report select * from tb_agent_loging_report_txt
+    INSERT OVERWRITE table tb_agent_performance select * from tb_agent_performance_txt
+
+3. List of all agents' names.
+
+    select distinct agent from tb_agent_loging_report;
+    
+4. Find out agent average rating.
+    
+    select agent, avg(avg_rating) as `average rating` from tb_agent_performance group by agent order by 1
+    
+5. Total working days for each agents
+
+    select agent, count(log_date) as `Total working date` from tb_agent_loging_report group by agent
+    
+6. Total query that each agent have taken
+    
+    select agent, sum(total_chats) as `Total query taken` from tb_agent_performance group by agent
+    
+7. Total Feedback that each agent have received
+    
+    select agent, count(total_feedback) as `Total Feedback received` from tb_agent_performance group by agent
+    
+8. Agent name who have average rating between 3.5 to 4
+    
+    select agent, avg(avg_rating) as `average rating` from tb_agent_performance group by agent having avg(avg_rating)>3.5 and avg(avg_rating)<=4
+    
+9. Agent name who have rating less than 3.5
+    
+    select agent, avg(avg_rating) as `average rating` from tb_agent_performance group by agent having avg(avg_rating)<3.5
+    
+10. Agent name who have rating more than 4.5
+
+    select agent, avg(avg_rating) as `average rating` from tb_agent_performance group by agent having avg(avg_rating)>=4.5
+
+11. How many feedback agents have received more than 4.5 average
+
+    select agent, sum(total_feedback) as `Total feedback` from tb_agent_performance group by agent having avg(avg_rating)>=4.5
+    
+12. average weekly response time for each agent
+13. average weekly resolution time for each agents 
+14. Find the number of chat on which they have received a feedback 
+15. Total contribution hour for each and every agents weekly basis 
+16. Perform inner join, left join and right join based on the agent column and after joining the table export that data into your local system.
+17. Perform partitioning on top of the agent column and then on top of that perform bucketing for each partitioning.
