@@ -21,18 +21,21 @@ We are going to perform below activities:
 
     create table tb_agent_loging_report_txt (
       sl_no int, agent string, log_date string, 
-      log_in timestamp, log_out timestamp, 
-      duration timestamp
-    ) row format delimited fields terminated by ',' tblproperties("skip.header.line.count" = "1") STORED AS TEXTFILE;
+      log_in string, log_out string, 
+      duration string) 
+      row format delimited 
+      fields terminated by ',' 
+      STORED AS TEXTFILE
+      tblproperties("skip.header.line.count" = "1");
     
     
     - Target table in ORC format
     
     create table tb_agent_loging_report (
       sl_no int, agent string, log_date string, 
-      log_in timestamp, log_out timestamp, 
-      duration timestamp
-    ) row format delimited fields terminated by ',' tblproperties("skip.header.line.count" = "1") STORED AS ORC;
+      log_in string, log_out string, 
+      duration string
+    ) row format delimited fields terminated by ',' STORED AS ORC;
     
 - AgentPerformance
 
@@ -45,31 +48,31 @@ We are going to perform below activities:
 
     create table tb_agent_performance_txt (
       sl_no int, agent string, total_chats int, 
-      avg_resp_time timestamp, avg_resl_time timestamp,
+      avg_resp_time string, avg_resl_time string,
       avg_rating int, total_feedback int
-    ) row format delimited fields terminated by ',' tblproperties("skip.header.line.count" = "1") STORED AS TEXTFILE;
+    ) row format delimited fields terminated by ','  STORED AS TEXTFILE tblproperties("skip.header.line.count" = "1");
     
     
     - Target table in ORC format
     
     create table tb_agent_performance (
       sl_no int, agent string, total_chats int, 
-      avg_resp_time timestamp, avg_resl_time timestamp,
+      avg_resp_time string, avg_resl_time string,
       avg_rating int, total_feedback int
-    ) row format delimited fields terminated by ',' tblproperties("skip.header.line.count" = "1") STORED AS ORC;
+    ) row format delimited fields terminated by ',' STORED AS ORC;
     
     
 2. Dump the data inside the hdfs in the given schema location.
 
     - Load data from Local to HDFS
     
-    hdfs dfs -copyFromLocal '/config/workplace/AgentLogingReport.csv' '/tmp/hive/'
-    hdfs dfs -copyFromLocal '/config/workplace/AgentPerformance.csv' '/tmp/hive/'
+    hdfs dfs -copyFromLocal '/config/workspace/AgentLogingReport.csv' '/tmp/hive/'
+    hdfs dfs -copyFromLocal '/config/workspace/AgentPerformance.csv' '/tmp/hive/'
     
     - Load data from HDFS to TEXT file format table
     
-    load data inpath '/tmp/hive/AgentLogingReport.csv' into table tb_agent_loging_report_txt
-    load data inpath '/tmp/hive/AgentPerformance.csv' into table tb_agent_performance_txt
+    load data inpath '/tmp/hive/AgentLogingReport.csv' into table tb_agent_loging_report_txt;
+    load data inpath '/tmp/hive/AgentPerformance.csv' into table tb_agent_performance_txt;
     
     - Load data from intermediate table to target table
     
@@ -114,7 +117,10 @@ We are going to perform below activities:
     
 12. average weekly response time for each agent
 13. average weekly resolution time for each agents 
-14. Find the number of chat on which they have received a feedback 
+14. Find the number of chat on which they have received a feedback
+
+    select agent, sum(total_chats) as `Number of feedbacks` from tb_agent_performance where total_feedback > 0 group by agent
+    
 15. Total contribution hour for each and every agents weekly basis 
 16. Perform inner join, left join and right join based on the agent column and after joining the table export that data into your local system.
 17. Perform partitioning on top of the agent column and then on top of that perform bucketing for each partitioning.
