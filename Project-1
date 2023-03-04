@@ -128,17 +128,66 @@ We are going to perform below activities:
 
     Performing joins:
     -----------------
-    
     select * from tb_agent_performance perf inner join tb_agent_loging_report log on perf.agent = log.agent;
     select * from tb_agent_performance perf left join tb_agent_loging_report log on perf.agent = log.agent;
     select * from tb_agent_performance perf right join tb_agent_loging_report log on perf.agent = log.agent;
     
     Exporting data from hive to local
-    
-
+    ----------------------------------
     insert overwrite local directory '/config/workspace/joins_exports/inner/' select * from tb_agent_performance perf inner join tb_agent_loging_report log on perf.agent = log.agent;
     insert overwrite local directory '/config/workspace/joins_exports/left/' select * from tb_agent_performance perf left join tb_agent_loging_report log on perf.agent = log.agent;
     insert overwrite local directory '/config/workspace/joins_exports/right/' select * from tb_agent_performance perf right join tb_agent_loging_report log on perf.agent = log.agent;
     
     
 17. Perform partitioning on top of the agent column and then on top of that perform bucketing for each partitioning.
+
+     Performing partition and buckting on both tables for agent column:
+     -----------------------------------------------------
+     Table : tb_agent_performance_partition
+     ---------------------------------------
+     Step 1: Create new table
+     
+     create table tb_agent_performance_partition (
+      sl_no int, total_chats int, 
+      avg_resp_time string, avg_resl_time string,
+      avg_rating int, total_feedback int
+     )
+     PARTITIONED BY(agent string)
+     CLUSTERED BY Zipcode INTO 10 BUCKETS
+     row format delimited fields terminated by ',' STORED AS ORC;
+     
+     Step 2: insert data from non partition table into partition table
+     
+     SET hive.exec.dynamic.partition = true;
+     SET hive.exec.dynamic.partition.mode = nonstrict;
+     
+     FROM tb_agent_performance perf
+     INSERT OVERWRITE TABLE tb_agent_performance_partition PARTITION(agent)
+     SELECT perf.sl_no, perf.total_chats, perf.avg_resp_time, perf.avg_resl_time, perf.avg_rating, perf.total_feedback, perf.agent
+     DISTRIBUTE BY agent;
+     
+     Table : tb_agent_loging_report
+     ---------------------------------------
+     Step 1: Create new table
+     
+     create table tb_agent_loging_report_partition (
+      sl_no int, agent string, log_date string, 
+      log_in string, log_out string, 
+      duration string
+      )
+     PARTITIONED BY(agent string)
+     CLUSTERED BY Zipcode INTO 10 BUCKETS
+     row format delimited fields terminated by ',' STORED AS ORC;
+     
+     Step 2: insert data from non partition table into partition table
+     
+     SET hive.exec.dynamic.partition = true;
+     SET hive.exec.dynamic.partition.mode = nonstrict;
+     
+     FROM tb_agent_loging_report log
+     INSERT OVERWRITE TABLE tb_agent_loging_report_partition PARTITION(agent)
+     SELECT log.sl_no, log.log_date, log.log)in, log.log_out, log.agent
+     DISTRIBUTE BY agent;
+     
+     
+
