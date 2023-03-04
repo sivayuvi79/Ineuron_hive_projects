@@ -122,5 +122,23 @@ We are going to perform below activities:
     select agent, sum(total_chats) as `Number of feedbacks` from tb_agent_performance where total_feedback > 0 group by agent
     
 15. Total contribution hour for each and every agents weekly basis 
+
+    
 16. Perform inner join, left join and right join based on the agent column and after joining the table export that data into your local system.
+
+    Performing joins:
+    -----------------
+    
+    select * from tb_agent_performance perf inner join tb_agent_loging_report log on perf.agent = log.agent;
+    select * from tb_agent_performance perf left join tb_agent_loging_report log on perf.agent = log.agent;
+    select * from tb_agent_performance perf right join tb_agent_loging_report log on perf.agent = log.agent;
+    
+    Exporting data from hive to local
+    
+
+    insert overwrite local directory '/config/workspace/joins_exports/inner/' select * from tb_agent_performance perf inner join tb_agent_loging_report log on perf.agent = log.agent;
+    insert overwrite local directory '/config/workspace/joins_exports/left/' select * from tb_agent_performance perf left join tb_agent_loging_report log on perf.agent = log.agent;
+    insert overwrite local directory '/config/workspace/joins_exports/right/' select * from tb_agent_performance perf right join tb_agent_loging_report log on perf.agent = log.agent;
+    
+    
 17. Perform partitioning on top of the agent column and then on top of that perform bucketing for each partitioning.
