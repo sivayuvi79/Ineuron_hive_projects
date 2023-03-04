@@ -47,7 +47,7 @@ We are going to perform below activities:
     - Intermediate table to store csv file data
 
     create table tb_agent_performance_txt (
-      sl_no int, agent string, total_chats int, 
+      sl_no int, perf_date date, agent string, total_chats int, 
       avg_resp_time string, avg_resl_time string,
       avg_rating int, total_feedback int
     ) row format delimited fields terminated by ','  STORED AS TEXTFILE tblproperties("skip.header.line.count" = "1");
@@ -116,13 +116,20 @@ We are going to perform below activities:
     select agent, sum(total_feedback) as `Total feedback` from tb_agent_performance group by agent having avg(avg_rating)>=4.5
     
 12. average weekly response time for each agent
-13. average weekly resolution time for each agents 
+
+    select agent, weekofyear(perf_date), avg(avg_resp_time) from tb_agent_performance group by agent, weekofyear(perf_date)
+    
+13. average weekly resolution time for each agents
+    
+    select agent, weekofyear(perf_date), avg(avg_resl_time) from tb_agent_performance group by agent, weekofyear(perf_date)
+    
 14. Find the number of chat on which they have received a feedback
 
     select agent, sum(total_chats) as `Number of feedbacks` from tb_agent_performance where total_feedback > 0 group by agent
     
 15. Total contribution hour for each and every agents weekly basis 
-
+    
+    select agent, weekofyear(log_date), sum(hour(duration)) from tb_agent_loging_report group by agent, weekofyear(log_date)
     
 16. Perform inner join, left join and right join based on the agent column and after joining the table export that data into your local system.
 
@@ -148,7 +155,7 @@ We are going to perform below activities:
      Step 1: Create new table
      
      create table tb_agent_performance_partition (
-      sl_no int, total_chats int, 
+      sl_no int, perf_date date, total_chats int, 
       avg_resp_time string, avg_resl_time string,
       avg_rating int, total_feedback int
      )
